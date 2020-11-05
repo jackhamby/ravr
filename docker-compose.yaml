@@ -1,0 +1,30 @@
+# Use postgres/example user/password credentials
+version: '3.8'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - 35432:5432
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: ravr
+    volumes:
+      - ./database:/var/lib/postgresql
+      - ./docker-entrypoint-initdb.d/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  web:
+    build: .
+    depends_on:
+      - db
+    ports:
+      - 3000:8080
+    environment: 
+      PGUSER: user 
+      PGHOST: db
+      PGPASSWORD: pass 
+      PGDATABASE: ravr 
+      PGPORT:  5432
