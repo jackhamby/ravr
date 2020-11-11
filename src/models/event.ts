@@ -2,13 +2,15 @@ import { Location } from "./location";
 
 export interface Event {
     _id: string;
+    image: string;
     title: string;
-    minAge: number;
-    maxGuests: number;
-    imageUrl: string;
     description: string;
-    artist: string[];
+    artists: string;
+    date: Date;
     scene: string;
-    cost: number;
+    minAge: string;
+    maxGuests: string;
+    promoter: string;
+    cost: string;
     location: Location;
 }
