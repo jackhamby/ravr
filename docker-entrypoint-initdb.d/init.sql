@@ -15,8 +15,12 @@ create table contacts (
     last_name text,
     email text,
     phone text,
+    user_id int not null,
 
-    primary key (contact_id)
+    primary key (contact_id),
+    constraint creator
+        foreign key (user_id)
+            references users (user_id)
 );
 
 
@@ -34,10 +38,10 @@ create table locations (
 
 
     primary key (location_id),
-    constraint users
+    constraint creator
         foreign key (user_id)
             references users (user_id),
-    constraint contacts
+    constraint contact
         foreign key (contact_id)
             references contacts (contact_id)
 );
@@ -54,7 +58,23 @@ create table events (
     user_id int not null,
 
     primary key (event_id),
-    constraint users
+    constraint creator
         foreign key (user_id)
             references users (user_id) 
 );
+    -- // into events(name, minAge, maxGuests, description, scene, cost)
+        --  values('jacks cool event', 12, 200, 'a super cool event', 'indie/rock', 5.123);
+
+
+-- insert into users (
+--     first_name,
+--     last_name,
+--     email, 
+--     phone
+-- ) values (
+--     'jack',
+--     'hamby',
+--     'jrhamby88@yahoo.com',
+--     '6302406317'
+-- ) returning user_id into test_user_id;
+
