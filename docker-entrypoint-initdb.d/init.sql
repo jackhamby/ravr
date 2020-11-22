@@ -11,8 +11,7 @@ create table users (
 
 create table contacts (
     contact_id int generated always as identity,
-    first_name text not null,
-    last_name text,
+    name text not null,
     email text,
     phone text,
     user_id int not null,
@@ -49,6 +48,7 @@ create table locations (
 create table events (
     event_id int generated always as identity,
     name text not null,
+    artists text not null,
     min_age int not null,
     max_guests int not null,
     image_url text,
@@ -62,19 +62,3 @@ create table events (
         foreign key (user_id)
             references users (user_id) 
 );
-    -- // into events(name, minAge, maxGuests, description, scene, cost)
-        --  values('jacks cool event', 12, 200, 'a super cool event', 'indie/rock', 5.123);
-
-
--- insert into users (
---     first_name,
---     last_name,
---     email, 
---     phone
--- ) values (
---     'jack',
---     'hamby',
---     'jrhamby88@yahoo.com',
---     '6302406317'
--- ) returning user_id into test_user_id;
-

@@ -28,6 +28,32 @@ app.use((req, res, next) => {
     });
 });
 
+
+
+app.get("/users",
+    [
+
+    ],
+    async (request: ExpressRequest, response: ExpressResponse<Response>) => {
+        try{
+            const users = await manager.readAllUsers();
+            response.status(200).send({
+                results: users,
+                errors: []
+            });
+        }
+        catch (exception){
+            response.status(500).send({
+                results: null,
+                errors: [
+                    {
+                        message: "failed to read all users"
+                    }
+                ]
+            })
+        }
+    });
+
 // This will probably be removed with a /search api
 app.get("/event",
         [
@@ -146,8 +172,11 @@ app.post(
     }
 );
 
-app.listen( port, () => {
+app.listen( port, async () => {
     manager = new Manager();
+
+    // TODO: remove test data
+    await manager._initializeTestData();
     console.log( `server started at http://localhost:${ port }` );
 });
 

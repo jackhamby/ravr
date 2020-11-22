@@ -8,9 +8,9 @@ export interface Event {
     artists: string;
     date: Date;
     scene: string;
-    minAge: string;
-    maxGuests: string;
+    minAge: number;
+    maxGuests: number;
     promoter: string;
-    cost: string;
+    cost: number;
     location: Location;
 }

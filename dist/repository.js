@@ -13,50 +13,105 @@ exports.Repository = void 0;
 const pg_1 = require("pg");
 class Repository {
     constructor() {
-        this.connect = () => __awaiter(this, void 0, void 0, function* () {
-            try {
-                // this.client = await MongoClient.connect(this.databaseUrl);k
-                // await this.pool.connect()
-            }
-            catch (e) {
-                throw new Error(('Failed to connect to database server'));
-            }
-        });
         this.createEvent = (event) => __awaiter(this, void 0, void 0, function* () {
-            // insert
-            // into events(name, minAge, maxGuests, description, scene, cost)
-            // values('jacks cool event', 12, 200, 'a super cool event', 'indie/rock', 5.123);
             return null;
         });
         this.readEvent = (eventId) => __awaiter(this, void 0, void 0, function* () {
-            //     const database: Db = this.client.db(this.databaseName);
-            //     try{
-            //         const event = await database.collection(this.eventCollectionName).findOne<Event>({ _id: new ObjectId(eventId)});
-            //         return event;
-            //     }
-            //     catch {
-            return null;
-            //     }
+            const result = yield this.pool.query("select * from event where event_id");
+            return result.rows[0];
         });
         this.readAllEvents = () => __awaiter(this, void 0, void 0, function* () {
             const result = yield this.pool.query("select * from events;");
             return result.rows;
         });
-        this.disconnect = () => {
-            //   this.client.close();
-        };
-        this.databaseHost = "127.0.0.1";
-        this.databaseUser = null;
-        this.databaseName = "ravr";
-        this.databasePassword = null;
-        this.databasePort = 5432;
-        this.pool = new pg_1.Pool({
-            user: this.databaseUser,
-            host: this.databaseHost,
-            database: this.databaseName,
-            password: this.databasePassword,
-            port: this.databasePort,
+        this.readAllUsers = () => __awaiter(this, void 0, void 0, function* () {
+            const result = yield this.pool.query("select * from users;");
+            return result.rows;
         });
+        // TODO: remove this test data
+        this.createUser = () => __awaiter(this, void 0, void 0, function* () {
+            const fn = "jack";
+            const ln = "hamby";
+            const eml = "ppop@shit.com";
+            const pne = "6023333412";
+            const result = yield this.pool.query(`insert into users(
+                first_name,
+                last_name,
+                email,
+                phone
+            ) values (
+                '${fn}',
+                '${ln}',
+                '${eml}',
+                '${pne}'
+            ) returning user_id;`);
+            const userId = result.rows[0].id;
+            console.log(`created user ${userId}`);
+            return userId;
+        });
+        this.createLocation = (userId, contactId) => __awaiter(this, void 0, void 0, function* () {
+            const lt = 50;
+            const lg = 50;
+            const ln1 = "1500 lasalle";
+            const ln2 = "Apt 304";
+            const zp = "55403";
+            const cty = "Minneapolis";
+            const ste = "Minnesota";
+            const result = yield this.pool.query(`insert into locations(
+                latitude,
+                longitude,
+                line1,
+                line2,
+                zip,
+                city,
+                state,
+                contact_id,
+                user_id,
+            ) values (
+                '${lt}',
+                '${lg}',
+                '${ln1}',
+                '${ln2}',
+                '${zp}',
+                '${cty}',
+                '${ste}',
+                '${contactId}',
+                '${userId}'
+            ) returning location_id;`);
+            const locationId = result.rows[0].id;
+            console.log(`created location ${locationId}`);
+            return locationId;
+        });
+        this.createContact = (userId) => __awaiter(this, void 0, void 0, function* () {
+            const fn = "nappy";
+            const ln = "sama";
+            const eml = "nappy@gmail.com";
+            const pne = "6305513321";
+            const uId = userId;
+            const result = yield this.pool.query(`insert into contacts(
+                first_name,
+                last_name,
+                email,
+                phone,
+                user_id
+            ) values (
+                '${fn}',
+                '${ln}',
+                '${eml}',
+                '${pne}',
+                '${uId}',
+            );`);
+            const contactId = result.rows[0].id;
+            console.log(`created contact ${contactId}`);
+            return contactId;
+        });
+        this._initializeTestData = () => __awaiter(this, void 0, void 0, function* () {
+            // init things here
+            const userId = yield this.createUser();
+            const contactId = yield this.createContact(userId);
+            const locationId = yield this.createLocation(userId, contactId);
+        });
+        this.pool = new pg_1.Pool();
     }
 }
 exports.Repository = Repository;
