@@ -56,6 +56,25 @@ app.use((req, res, next) => {
         next();
     });
 });
+app.get("/users", [], (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield manager.readAllUsers();
+        response.status(200).send({
+            results: users,
+            errors: []
+        });
+    }
+    catch (exception) {
+        response.status(500).send({
+            results: null,
+            errors: [
+                {
+                    message: "failed to read all users"
+                }
+            ]
+        });
+    }
+}));
 // This will probably be removed with a /search api
 app.get("/event", [], (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -155,7 +174,8 @@ app.post("/event", [
 }));
 app.listen(port, () => __awaiter(void 0, void 0, void 0, function* () {
     manager = new manager_1.Manager();
-    yield manager.initialize();
+    // TODO: remove test data
+    yield manager._initializeTestData();
     console.log(`server started at http://localhost:${port}`);
 }));
 //# sourceMappingURL=index.js.map

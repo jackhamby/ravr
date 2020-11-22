@@ -13,9 +13,9 @@ exports.Manager = void 0;
 const repository_1 = require("./repository");
 class Manager {
     constructor() {
-        this.initialize = () => __awaiter(this, void 0, void 0, function* () {
-            yield this.repository.connect();
-        });
+        // initialize = async (): Promise<void> => {
+        //     // await this.repository.connect();
+        // }
         this.readEvent = (eventId) => __awaiter(this, void 0, void 0, function* () {
             const event = yield this.repository.readEvent(eventId);
             if (event) {
@@ -29,6 +29,12 @@ class Manager {
         });
         this.createEvent = (event) => __awaiter(this, void 0, void 0, function* () {
             return yield this.repository.createEvent(event);
+        });
+        this.readAllUsers = () => __awaiter(this, void 0, void 0, function* () {
+            return yield this.repository.readAllUsers();
+        });
+        this._initializeTestData = () => __awaiter(this, void 0, void 0, function* () {
+            return this.repository._initializeTestData();
         });
         this.repository = new repository_1.Repository();
     }

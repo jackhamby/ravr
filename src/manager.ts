@@ -1,5 +1,6 @@
 // Business lgic
 import { Event } from "./models/event";
+import { User } from "./models/user";
 import { Repository } from "./repository";
 
 export class Manager {
@@ -30,5 +31,13 @@ export class Manager {
 
     createEvent = async (event: Event): Promise<number> => {
         return await this.repository.createEvent(event);
+    }
+
+    readAllUsers = async (): Promise<User[]> => {
+        return await this.repository.readAllUsers();
+    }
+
+    _initializeTestData =  async (): Promise<void> => {
+        return this.repository._initializeTestData();
     }
 }

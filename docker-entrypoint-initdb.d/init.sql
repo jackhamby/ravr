@@ -11,12 +11,15 @@ create table users (
 
 create table contacts (
     contact_id int generated always as identity,
-    first_name text not null,
-    last_name text,
+    name text not null,
     email text,
     phone text,
+    user_id int not null,
 
-    primary key (contact_id)
+    primary key (contact_id),
+    constraint creator
+        foreign key (user_id)
+            references users (user_id)
 );
 
 
@@ -34,10 +37,10 @@ create table locations (
 
 
     primary key (location_id),
-    constraint users
+    constraint creator
         foreign key (user_id)
             references users (user_id),
-    constraint contacts
+    constraint contact
         foreign key (contact_id)
             references contacts (contact_id)
 );
@@ -45,6 +48,7 @@ create table locations (
 create table events (
     event_id int generated always as identity,
     name text not null,
+    artists text not null,
     min_age int not null,
     max_guests int not null,
     image_url text,
@@ -54,7 +58,7 @@ create table events (
     user_id int not null,
 
     primary key (event_id),
-    constraint users
+    constraint creator
         foreign key (user_id)
             references users (user_id) 
 );
