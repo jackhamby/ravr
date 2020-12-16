@@ -1,16 +1,14 @@
-import { Location } from "./location";
 
 export interface Event {
-    _id: string;
-    image: string;
-    title: string;
-    description: string;
+    event_id: number;
+    name: string;
     artists: string;
-    date: Date;
+    min_age: number;
+    max_guests: number;
+    image_url: string;
+    description: string;
     scene: string;
-    minAge: number;
-    maxGuests: number;
-    promoter: string;
     cost: number;
-    location: Location;
+    user_id: number;
+    location_id: number;
 }

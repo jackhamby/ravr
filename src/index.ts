@@ -32,7 +32,6 @@ app.use((req, res, next) => {
 
 app.get("/users",
     [
-
     ],
     async (request: ExpressRequest, response: ExpressResponse<Response>) => {
         try{
@@ -55,7 +54,7 @@ app.get("/users",
     });
 
 // This will probably be removed with a /search api
-app.get("/event",
+app.get("/events",
         [
 
         ],
@@ -83,13 +82,25 @@ app.get("/event",
 
 
 app.get(
-    "/event/:id",
+    "/events/:event_id",
     [
-        // any validation goes here
+        param('event_id').exists().isInt().withMessage("event id must be a whole number"),
     ],
     async (request: ExpressRequest, response: ExpressResponse<Response>) => {
+        const errors = validationResult(request);
+        // 400
+        if (!errors.isEmpty()){
+            return response.status(400).send({
+                results: null,
+                errors: errors.array().map((error: ValidationError) => {
+                    return {
+                        message: error.msg,
+                    }
+                }),
+            });
+        }
         try {
-            const event = await manager.readEvent(request.params.id);
+            const event = await manager.readEvent(request.params.event_id);
             if (event){
                 return response.status(200).send({
                     results: event,
@@ -118,17 +129,18 @@ app.get(
 
 
 app.post(
-    "/event",
+    "/events",
     [
-        body('minAge').exists().isInt().withMessage("minAge must be a whole number"),
-        body('maxGuests').exists().isInt().withMessage("maxGuests must be a whole number"),
-        body('imageUrl').exists().isURL().withMessage("imageUrl must be a valid url"),
-        body('cost').exists().withMessage('cost must be defined'),
+        body('name').isString().withMessage("name must be a string"),
+        body('min_age').isInt().withMessage("min_age must be a whole number"),
+        body('max_guests').isInt().withMessage("max_guests must be a whole number"),
         body('cost').isNumeric().withMessage("cost must be a number"),
-        body('description').exists().withMessage("descripton must be defined"),
-        body('artist').exists().withMessage("artist must be defined"),
-        body('scene').exists().withMessage("scene must be defined"),
-        body('location').exists().withMessage("location must be defined"),
+        body('description').isString().withMessage("description must be a string"),
+        body('artists').isString().withMessage("artists must be string"),
+        body('scene').isString().withMessage("scene must be a string"),
+        body('image_url').isURL().withMessage("image_url must be a valid url"),
+        body('user_id').isInt().withMessage("user_id must be an int"),
+        body('location_id').isInt().withMessage("location_id must be an int")
     ],
     async (request: ExpressRequest, response: ExpressResponse<Response>) => {
         const errors = validationResult(request);

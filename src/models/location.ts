@@ -1,10 +1,13 @@
 import { Contact } from "./contact";
-import { Address } from "./address";
 
 export interface Location {
-    name: string;
-    address: Address;
-    contact: Contact;
+    location_id: number;
     latitude: number;
     longitude: number;
+    line1: string;
+    line2: string;
+    zip: string;
+    city: string;
+    contact_id: number;
+    user_id: number;
 }

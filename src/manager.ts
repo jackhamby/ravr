@@ -10,17 +10,10 @@ export class Manager {
     constructor(){
         this.repository = new Repository();
     }
-
-    // initialize = async (): Promise<void> => {
-    //     // await this.repository.connect();
-    // }
-
-
+    
     readEvent = async (eventId: string): Promise<Event> => {
+        // TODO: validation around eventId
         const event = await this.repository.readEvent(eventId);
-        if (event){
-            delete event._id;
-        }
         return event
     }
 
