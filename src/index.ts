@@ -1,7 +1,6 @@
 import express, { Response as ExpressResponse, Request as ExpressRequest, response } from "express";
 import { Manager } from "./manager";
 import { Response } from "./response";
-import { Event } from './models/event';
 import { body, validationResult, ValidationError, param } from'express-validator';
 import * as BodyParser from 'body-parser';
 
@@ -32,6 +31,7 @@ app.use((req, res, next) => {
 
 app.get("/users",
     [
+        // TODO: valdidation
     ],
     async (request: ExpressRequest, response: ExpressResponse<Response>) => {
         try{

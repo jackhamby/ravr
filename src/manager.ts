@@ -1,6 +1,6 @@
 // Business lgic
-import { Event } from "./models/event";
-import { User } from "./models/user";
+import { Event } from "./models/ui_models/event";
+import { User } from "./models/ui_models/user";
 import { Repository } from "./repository";
 
 export class Manager {

@@ -1,8 +1,12 @@
-import { Event } from './models/event';
+import { Event as DbEvent } from './models/db_models/event';
 import { Pool, Client } from 'pg';
-import { User } from './models/user';
-import { Location } from './models/location';
-import { Contact } from './models/contact';
+import { User as DbUser } from './models/db_models/user';
+import { Location as DbLocation } from './models/db_models/location';
+import { Contact as DbContact } from './models/db_models/contact';
+import { Event } from './models/ui_models/event';
+import { User } from './models/ui_models/user';
+import { Location } from './models/ui_models/location';
+
 
 
 export class Repository {
@@ -14,7 +18,7 @@ export class Repository {
     }
 
     createEvent = async(event: Event): Promise<number> => {
-        const result = await this.pool.query<Event>(
+        const result = await this.pool.query<DbEvent>(
             `insert into events(
                 name,
                 artists,
@@ -35,8 +39,8 @@ export class Repository {
                 '${event.description}',
                 '${event.scene}',
                 '${event.cost}',
-                '${event.user_id}',
-                '${event.location_id}'
+                '${event.creator.user_id}',
+                '${event.location.location_id}'
             ) returning event_id;`
         );
 
@@ -45,18 +49,80 @@ export class Repository {
     }
 
     readEvent = async(eventId: string): Promise<Event> => {
-        const result = await this.pool.query<Event>(`select * from events where event_id = ${eventId};`)
-        return result.rows[0];
+        // const result = await this.pool.query<DbEvent & DbUser & DbLocation>(`select 
+        //                                                     ev.event_id,
+        //                                                     ev.description,
+        //                                                     cont.first_name contact
+        //                                                 from events as ev
+        //                                                 full outer join users as us
+        //                                                     on ev.user_id = us.user_id
+        //                                                 full outer join locations as loc
+        //                                                     on ev.location_id = loc.location_id 
+        //                                                     full outer join contacts as cont
+        //                                                         on cont.contact_id = loc.contact_id
+        //                                                 and ev.event_id = ${eventId};`);
+        const result = await this.pool.query<any>(`select 
+                                                            ev.event_id,
+                                                            ev.description,
+                                                            ev.artists,
+                                                            ev.cost,
+                                                            ev.image_url,
+                                                            ev.max_guests,
+                                                            ev.min_age,
+                                                            ev.name,
+                                                            event.scene,
+                                                            cont.first_name bigpoop
+                                                        from events as ev
+                                                        full outer join users as us
+                                                            on ev.user_id = us.user_id
+                                                        full outer join locations as loc
+                                                            on ev.location_id = loc.location_id 
+                                                            full outer join contacts as cont
+                                                                on cont.contact_id = loc.contact_id
+                                                        and ev.event_id = ${eventId};`);
+        const dbEvent = result.rows[0];
+        console.log(dbEvent);
+        const event = {} as Event;
+        event.artists = dbEvent.artists;
+        event.cost = dbEvent.cost;
+        event.description = dbEvent.description;
+        event.event_id = dbEvent.event_id;
+        event.image_url = dbEvent.image_url;
+        event.max_guests = dbEvent.max_guests;
+        event.min_age = dbEvent.min_age;
+        event.name = dbEvent.name;
+        event.scene = dbEvent.scene;
+
+        event.location = {} as Location;
+        event.location.city = dbEvent.city;
+        event.location.latitude = dbEvent.latitude;
+        event.location.longitude = dbEvent.longitude;
+        event.location.line1 = dbEvent.line1;
+        event.location.line2 = dbEvent.line2;
+        event.location.zip = dbEvent.zip;
+        event.location.contact = null; // TODO: how to query this without overrriding event.creator data
+
+        event.creator = {} as User;
+        event.creator.email = dbEvent.email;
+        event.creator.name = dbEvent.name;
+        event.creator.phone = dbEvent.phone;
+        event.creator.is_active = dbEvent.is_active;
+        event.creator.user_id = dbEvent.user_id;
+        
+        // return result.rows[0];
+        return event;
     }
 
     readAllEvents = async(): Promise<Event[]> => {
-        const result = await this.pool.query<Event>("select * from events;");
-        return result.rows;
+        const result = await this.pool.query<DbEvent>("select * from events;");
+        // return result.rows;
+        return [] as Event[];
     }
 
     readAllUsers = async(): Promise<User[]> => {
-        const result = await this.pool.query<User>("select * from users;");
-        return result.rows;
+        const result = await this.pool.query<DbUser>("select * from users;");
+        // return result.rows;
+        return [] as User[];
     }
 
 
@@ -74,7 +140,7 @@ export class Repository {
         const ln = "hamby";
         const eml = "ppop@shit.com";
         const isActive = true;
-        const result = await this.pool.query<User>(
+        const result = await this.pool.query<DbUser>(
             `insert into users(
                 is_active,
                 first_name,
@@ -102,7 +168,7 @@ export class Repository {
         const cty = "Minneapolis";
         const ste = "Minnesota";
 
-        const result = await this.pool.query<Location>(
+        const result = await this.pool.query<DbLocation>(
             `insert into locations(
                 latitude,
                 longitude,
@@ -138,7 +204,7 @@ export class Repository {
         const ln = "sama";
         const eml = "nappy@gmail.com";
         const uId = userId;
-        const result = await this.pool.query<Contact>(
+        const result = await this.pool.query<DbContact>(
             `insert into contacts(
                 first_name,
                 last_name,
@@ -167,7 +233,7 @@ export class Repository {
         const scene = "techno";
         const cost = 25.0;
 
-        const result = await this.pool.query<Event>(
+        const result = await this.pool.query<DbEvent>(
             `insert into events(
                 name,
                 artists,
