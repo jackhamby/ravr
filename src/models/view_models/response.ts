@@ -1,4 +1,4 @@
-import { Error } from './models/ui_models/error';
+import { Error } from './error';
 
 export interface Response extends Express.Response{
     results: any;

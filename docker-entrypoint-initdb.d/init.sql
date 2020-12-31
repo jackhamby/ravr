@@ -5,6 +5,8 @@ create table users (
     last_name text not null,
     email text not null,
     is_active boolean not null,
+    password text not null,
+    salt text not null,
 
     primary key (user_id)
 );
@@ -45,7 +47,7 @@ create table locations (
 
 create table events (
     event_id int generated always as identity,
-    name text not null,
+    title text not null,
     artists text not null,
     min_age int not null,
     max_guests int not null,
@@ -53,6 +55,7 @@ create table events (
     description text not null,
     scene text not null,
     cost decimal not null,
+    promoter text,
     user_id int not null,
     location_id int not null,
 
