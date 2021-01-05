@@ -8,6 +8,8 @@ import { EventDetail } from './models/view_models/event_detail';
 import { CreateUser } from './models/view_models/create_user';
 import { randomBytes, createHash } from 'crypto';
 import { CreateUserResponse } from './models/view_models/create_user_response';
+import { VerifyPassword } from './models/view_models/verify_password';
+import { CreateEvent } from './models/view_models/create_event';
 
 
 export class DataAccess {
@@ -17,37 +19,6 @@ export class DataAccess {
     constructor() {
         this.pool = new Pool();
     }
-
-    // createEvent = async(event: Event): Promise<number> => {
-    //     const result = await this.pool.query<DbEvent>(
-    //         `insert into events(
-    //             name,
-    //             artists,
-    //             min_age,
-    //             max_guests,
-    //             image_url,
-    //             description,
-    //             scene,
-    //             cost,
-    //             user_id,
-    //             location_id
-    //         ) values (
-    //             '${event.name}',
-    //             '${event.artists}',
-    //             '${event.min_age}',
-    //             '${event.max_guests}',
-    //             '${event.image_url}',
-    //             '${event.description}',
-    //             '${event.scene}',
-    //             '${event.cost}',
-    //             '${event.creator.user_id}',
-    //             '${event.location.location_id}'
-    //         ) returning event_id;`
-    //     );
-
-    //     const eventId = result.rows[0].event_id;    
-    //     return eventId;
-    // }
 
     getEventList = async(): Promise<EventSummary[]> => {
         const result = await this.pool.query<EventSummary>(`select 
@@ -59,25 +30,149 @@ export class DataAccess {
 
     getEventDetail = async(eventId: number): Promise<EventDetail> => {
         const result = await this.pool.query<EventDetail>(`select
-                                                                event_id,
-                                                                title,
-                                                                image_url,
-                                                                line1,
-                                                                line2,
-                                                                city,
-                                                                state,
-                                                                zip,
-                                                                min_age,
-                                                                max_guests,
-                                                                scene,
-                                                                description,
-                                                                artists,
-                                                                promoter
-                                                            from events
-                                                            full outer join locations
-                                                                on events.location_id = locations.location_id
-                                                            and events.event_id = ${eventId};`)
+            event_id,
+            title,
+            image_url,
+            line1,
+            line2,
+            city,
+            state,
+            zip,
+            min_age,
+            max_guests,
+            scene,
+            description,
+            artists,
+            promoter
+        from events
+        full outer join locations
+            on events.location_id = locations.location_id
+        and events.event_id = ${eventId};`)
         return result.rows[0];
+    }
+
+    createEvent = async(event: CreateEvent): Promise<number> => {
+
+        const contactResult = await this.pool.query<DbContact>(
+            `insert into contacts(
+                first_name,
+                last_name,
+                email,
+                user_id
+            ) values (
+                '${event.first_name}',
+                '${event.last_name}',
+                '${event.email}',
+                '${event.user_id}'
+            ) returning contact_id;`
+        );
+
+        const contactId = contactResult.rows[0].contact_id;
+
+        const locationValues = [
+            event.latitude,
+            event.longitude,
+            event.line1,
+            event.line2,
+            event.zip,
+            event.city,
+            event.state,
+            contactId,
+            event.user_id
+        ]
+        const locationQuery = `insert into locations(
+            latitude,
+            longitude,
+            line1,
+            line2,
+            zip,
+            city,
+            state,
+            contact_id,
+            user_id
+        ) values (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9
+        ) returning location_id;`;
+
+        const locationResult = await this.pool.query<DbLocation>(locationQuery, locationValues);
+        const locationId = locationResult.rows[0].location_id;
+
+        const eventValues = [
+            event.title,
+            event.artists,
+            event.min_age,
+            event.max_guests,
+            event.image_url,
+            event.description,
+            event.scene,
+            event.cost,
+            event.user_id,
+            locationId
+        ];
+
+        const eventQuery = `insert into events(
+            title,
+            artists,
+            min_age,
+            max_guests,
+            image_url,
+            description,
+            scene,
+            cost,
+            user_id,
+            location_id
+        ) values (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10
+        ) returning event_id;`
+
+        const result = await this.pool.query<DbEvent>(eventQuery, eventValues);
+
+
+        // const result = await this.pool.query<DbEvent>(
+        //     `insert into events(
+        //         title,
+        //         artists,
+        //         min_age,
+        //         max_guests,
+        //         image_url,
+        //         description,
+        //         scene,
+        //         cost,
+        //         user_id,
+        //         location_id
+        //     ) values (
+        //         '${event.title}',
+        //         '${event.artists}',
+        //         '${event.min_age}',
+        //         '${event.max_guests}',
+        //         '${event.image_url}',
+        //         '${event.description}',
+        //         '${event.scene}',
+        //         '${event.cost}',
+        //         '${event.user_id}',
+        //         '${locationId}'
+        //     ) returning event_id;`
+        // );
+
+        const eventId = result.rows[0].event_id;    
+        return eventId;
     }
 
     createUser = async(user: CreateUser): Promise<number> => {
@@ -105,93 +200,26 @@ export class DataAccess {
     }
 
 
+    signIn = async(email: string, password: string): Promise<number> => {
+        const result = await this.pool.query<VerifyPassword>(`select 
+                                                      user_id,
+                                                      password,
+                                                      salt
+                                                   from users where email = '${email}';`);
+        const passwordHash = result.rows[0].password;
+        const salt = result.rows[0].salt;
+        const user_id = result.rows[0].user_id;
 
-    // readEvents = async(eventId: string): Promise<Event> => {
-    //     return {} as Event;
-    //     // const result = await this.pool.query<DbEvent & DbUser & DbLocation>(`select 
-    //     //                                                     ev.event_id,
-    //     //                                                     ev.description,
-    //     //                                                     cont.first_name contact
-    //     //                                                 from events as ev
-    //     //                                                 full outer join users as us
-    //     //                                                     on ev.user_id = us.user_id
-    //     //                                                 full outer join locations as loc
-    //     //                                                     on ev.location_id = loc.location_id 
-    //     //                                                     full outer join contacts as cont
-    //     //                                                         on cont.contact_id = loc.contact_id
-    //     //                                                 and ev.event_id = ${eventId};`);
-    //     // const result = await this.pool.query<any>(`select 
-    //     //                                                     ev.event_id,
-    //     //                                                     ev.description,
-    //     //                                                     ev.artists,
-    //     //                                                     ev.cost,
-    //     //                                                     ev.image_url,
-    //     //                                                     ev.max_guests,
-    //     //                                                     ev.min_age,
-    //     //                                                     ev.name,
-    //     //                                                     event.scene,
-    //     //                                                     cont.first_name bigpoop
-    //     //                                                 from events as ev
-    //     //                                                 full outer join users as us
-    //     //                                                     on ev.user_id = us.user_id
-    //     //                                                 full outer join locations as loc
-    //     //                                                     on ev.location_id = loc.location_id 
-    //     //                                                     full outer join contacts as cont
-    //     //                                                         on cont.contact_id = loc.contact_id
-    //     //                                                 and ev.event_id = ${eventId};`);
-    //     // const dbEvent = result.rows[0];
-    //     // console.log(dbEvent);
-    //     // const event = {} as Event;
-    //     // event.artists = dbEvent.artists;
-    //     // event.cost = dbEvent.cost;
-    //     // event.description = dbEvent.description;
-    //     // event.event_id = dbEvent.event_id;
-    //     // event.image_url = dbEvent.image_url;
-    //     // event.max_guests = dbEvent.max_guests;
-    //     // event.min_age = dbEvent.min_age;
-    //     // event.name = dbEvent.name;
-    //     // event.scene = dbEvent.scene;
-
-    //     // event.location = {} as Location;
-    //     // event.location.city = dbEvent.city;
-    //     // event.location.latitude = dbEvent.latitude;
-    //     // event.location.longitude = dbEvent.longitude;
-    //     // event.location.line1 = dbEvent.line1;
-    //     // event.location.line2 = dbEvent.line2;
-    //     // event.location.zip = dbEvent.zip;
-    //     // event.location.contact = null; // TODO: how to query this without overrriding event.creator data
-
-    //     // event.creator = {} as User;
-    //     // event.creator.email = dbEvent.email;
-    //     // event.creator.name = dbEvent.name;
-    //     // event.creator.phone = dbEvent.phone;
-    //     // event.creator.is_active = dbEvent.is_active;
-    //     // event.creator.user_id = dbEvent.user_id;
-        
-    //     // // return result.rows[0];
-    //     // return event;
-    // }
-
-    // readAllEvents = async(): Promise<Event[]> => {
-    //     const result = await this.pool.query<DbEvent>("select * from events;");
-    //     // return result.rows;
-    //     return [] as Event[];
-    // }
-
-    // readAllUsers = async(): Promise<User[]> => {
-    //     const result = await this.pool.query<DbUser>("select * from users;");
-    //     // return result.rows;
-    //     return [] as User[];
-    // }
-
-
-
-
-
-
-
-
-
+        const hash = createHash('sha256');
+        const saltedPassword = password + salt;
+        hash.update(saltedPassword);
+        const newPasswordHash = hash.digest("hex");
+        if (newPasswordHash === passwordHash){
+            return user_id;
+        }
+        // TODO: log error invalid password
+        return 0; 
+    }
 
     // TODO: remove this test data
     createTestUser = async(): Promise<number> => {
@@ -246,8 +274,8 @@ export class DataAccess {
                 contact_id,
                 user_id
             ) values (
-                '${lt}',
-                '${lg}',
+                ${lt === undefined ? 'NULL' : lt},
+                ${lg === undefined ? 'NULL' : lg},
                 '${ln1}',
                 '${ln2}',
                 '${zp}',

@@ -26,9 +26,9 @@ create table contacts (
 
 create table locations (
     location_id int generated always as identity,
-    latitude int not null,
-    longitude int not null,
-    line1 text,
+    latitude decimal,
+    longitude decimal,
+    line1 text not null,
     line2 text,
     zip text not null,
     city text not null,

@@ -9,9 +9,6 @@ const app = express();
 const port = 8080;
 let dataAccess: DataAccess = null;
 
-// mongo
-// 127.0.0.1
-// 27017
 app.use((req, res, next) => {
     BodyParser.json()(req, res, (err) => {
         if (err) {
@@ -28,105 +25,6 @@ app.use((req, res, next) => {
     });
 });
 
-
-
-// app.get("/users",
-//     [
-//         // TODO: valdidation
-//     ],
-//     async (request: ExpressRequest, response: ExpressResponse<Response>) => {
-//         try{
-//             const users = await manager.readAllUsers();
-//             response.status(200).send({
-//                 results: users,
-//                 errors: []
-//             });
-//         }
-//         catch (exception){
-//             response.status(500).send({
-//                 results: null,
-//                 errors: [
-//                     {
-//                         message: "failed to read all users"
-//                     }
-//                 ]
-//             })
-//         }
-//     });
-
-// // This will probably be removed with a /search api
-// app.get("/events",
-//         [
-
-//         ],
-//         async(request: ExpressRequest, response: ExpressResponse<Response>) => {
-
-//             try {
-//                 const events = await manager.readAllEvents();
-//                 response.status(200).send({
-//                     results: events,
-//                     errors: []
-//                 })
-//             }
-//             catch {
-//                 response.status(500).send({
-//                     results: null,
-//                     errors: [
-//                         {
-//                             message: "failed to read all events"
-//                         }
-//                     ]
-//                 })
-//             }
-//         }
-// );
-
-
-// app.get(
-//     "/events/:event_id",
-//     [
-//         param('event_id').exists().isInt().withMessage("event id must be a whole number"),
-//     ],
-//     async (request: ExpressRequest, response: ExpressResponse<Response>) => {
-//         const errors = validationResult(request);
-//         // 400
-//         if (!errors.isEmpty()){
-//             return response.status(400).send({
-//                 results: null,
-//                 errors: errors.array().map((error: ValidationError) => {
-//                     return {
-//                         message: error.msg,
-//                     }
-//                 }),
-//             });
-//         }
-//         try {
-//             const event = await manager.readEvent(request.params.event_id);
-//             if (event){
-//                 return response.status(200).send({
-//                     results: event,
-//                     errors: [],
-//                 })
-//             }
-//             return response.status(404).send({
-//                 results: null,
-//                 errors: [{
-//                     message: "event not found"
-//                 }]
-//             })
-//         }
-//         catch (exception){
-//             return response.status(500).send({
-//                 results: null,
-//                 errors: [{
-//                     message: "internal server error"
-//                 }]
-//             })
-//         }
-//     }
-// );
-
-
 app.get(
     "/",
     [],
@@ -137,6 +35,18 @@ app.get(
         });
     }
 );
+
+app.post(
+    "/CreateEvent",
+    [],
+    async(request: ExpressRequest, response: ExpressResponse<Response>) => {
+        const eventId = await dataAccess.createEvent(request.body)
+        return response.status(201).send({
+            results: eventId,
+            errors: [],
+        });
+    }
+)
 
 app.get(
     "/EventList",
@@ -173,6 +83,18 @@ app.post(
             errors: []
         });
 
+    }
+);
+
+app.post(
+    "/SignIn",
+    [],
+    async(request: ExpressRequest, response: ExpressResponse<Response>) => {
+        const result = await dataAccess.signIn(request.body.email, request.body.password);
+        return response.status(200).send({
+            results: result,
+            errors: []
+        });
     }
 )
 
