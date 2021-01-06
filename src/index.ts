@@ -30,7 +30,7 @@ app.get(
     [],
     async(request: ExpressRequest, response: ExpressResponse<Response>) => {
         return response.status(200).send({
-            results: null,
+            results: "welcome to ravr api",
             errors: []
         });
     }

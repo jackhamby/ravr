@@ -9,7 +9,7 @@ export interface CreateEvent {
     description: string;
     artists: string;
     promoter: string;
-    user_id: string;
+    user_id: number;
 
 
     // Location

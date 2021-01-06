@@ -1,8 +1,6 @@
 import { Event as DbEvent } from './models/db_models/event';
 import { Pool, Client } from 'pg';
 import { User as DbUser } from './models/db_models/user';
-import { Location as DbLocation } from './models/db_models/location';
-import { Contact as DbContact } from './models/db_models/contact';
 import { EventSummary } from './models/view_models/event_list';
 import { EventDetail } from './models/view_models/event_detail';
 import { CreateUser } from './models/view_models/create_user';
@@ -10,6 +8,10 @@ import { randomBytes, createHash } from 'crypto';
 import { CreateUserResponse } from './models/view_models/create_user_response';
 import { VerifyPassword } from './models/view_models/verify_password';
 import { CreateEvent } from './models/view_models/create_event';
+import { CreateContact } from './models/view_models/create_contact';
+import { CreateLocation } from './models/view_models/create_location';
+import { CreateContactResponse } from './models/view_models/create_contact_response';
+import { CreateLocationResponse } from './models/view_models/create_location_response';
 
 
 export class DataAccess {
@@ -52,58 +54,26 @@ export class DataAccess {
     }
 
     createEvent = async(event: CreateEvent): Promise<number> => {
+        const contact = {} as CreateContact;
+        contact.email = event.email;
+        contact.first_name = event.first_name;
+        contact.last_name = event.last_name;
+        contact.user_id = event.user_id;
+        
+        const contactId = await this.createContact(contact);
 
-        const contactResult = await this.pool.query<DbContact>(
-            `insert into contacts(
-                first_name,
-                last_name,
-                email,
-                user_id
-            ) values (
-                '${event.first_name}',
-                '${event.last_name}',
-                '${event.email}',
-                '${event.user_id}'
-            ) returning contact_id;`
-        );
-
-        const contactId = contactResult.rows[0].contact_id;
-
-        const locationValues = [
-            event.latitude,
-            event.longitude,
-            event.line1,
-            event.line2,
-            event.zip,
-            event.city,
-            event.state,
-            contactId,
-            event.user_id
-        ]
-        const locationQuery = `insert into locations(
-            latitude,
-            longitude,
-            line1,
-            line2,
-            zip,
-            city,
-            state,
-            contact_id,
-            user_id
-        ) values (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            $9
-        ) returning location_id;`;
-
-        const locationResult = await this.pool.query<DbLocation>(locationQuery, locationValues);
-        const locationId = locationResult.rows[0].location_id;
+        const location = {} as CreateLocation;
+        location.city = event.city;
+        location.state = event.state;
+        location.zip = event.zip;
+        location.line1 = event.line1;
+        location.line2 = event.line2;
+        location.latitude = event.latitude;
+        location.longitude = event.longitude;
+        location.user_id = event.user_id;
+        location.contact_id = contactId;
+        
+        const locationId = await this.createLocation(location);
 
         const eventValues = [
             event.title,
@@ -143,34 +113,6 @@ export class DataAccess {
         ) returning event_id;`
 
         const result = await this.pool.query<DbEvent>(eventQuery, eventValues);
-
-
-        // const result = await this.pool.query<DbEvent>(
-        //     `insert into events(
-        //         title,
-        //         artists,
-        //         min_age,
-        //         max_guests,
-        //         image_url,
-        //         description,
-        //         scene,
-        //         cost,
-        //         user_id,
-        //         location_id
-        //     ) values (
-        //         '${event.title}',
-        //         '${event.artists}',
-        //         '${event.min_age}',
-        //         '${event.max_guests}',
-        //         '${event.image_url}',
-        //         '${event.description}',
-        //         '${event.scene}',
-        //         '${event.cost}',
-        //         '${event.user_id}',
-        //         '${locationId}'
-        //     ) returning event_id;`
-        // );
-
         const eventId = result.rows[0].event_id;    
         return eventId;
     }
@@ -199,6 +141,67 @@ export class DataAccess {
         return result.rows[0].user_id;
     }
 
+    createContact = async(contact: CreateContact): Promise<number> => {
+        // TODO: do we need objects defined for the result
+        // of insert statements
+        const contactResult = await this.pool.query<CreateContactResponse>(
+            `insert into contacts(
+                first_name,
+                last_name,
+                email,
+                user_id
+            ) values (
+                '${contact.first_name}',
+                '${contact.last_name}',
+                '${contact.email}',
+                '${contact.user_id}'
+            ) returning contact_id;`
+        );
+
+        const contactId = contactResult.rows[0].contact_id;
+        return contactId;
+    }
+
+    createLocation = async(location: CreateLocation): Promise<number> => {
+        const locationValues = [
+            location.latitude,
+            location.longitude,
+            location.line1,
+            location.line2,
+            location.zip,
+            location.city,
+            location.state,
+            location.contact_id,
+            location.user_id
+        ];
+
+        const locationQuery = `insert into locations(
+            latitude,
+            longitude,
+            line1,
+            line2,
+            zip,
+            city,
+            state,
+            contact_id,
+            user_id
+        ) values (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9
+        ) returning location_id;`;
+
+        const locationResult = await this.pool.query<CreateLocationResponse>(locationQuery, locationValues);
+        const locationId = locationResult.rows[0].location_id;
+        return locationId;
+    }
+
 
     signIn = async(email: string, password: string): Promise<number> => {
         const result = await this.pool.query<VerifyPassword>(`select 
@@ -206,6 +209,12 @@ export class DataAccess {
                                                       password,
                                                       salt
                                                    from users where email = '${email}';`);
+
+        if (!(result.rowCount > 0)){
+            // TODO: handle error
+            return 0;
+
+        }
         const passwordHash = result.rows[0].password;
         const salt = result.rows[0].salt;
         const user_id = result.rows[0].user_id;
@@ -217,9 +226,13 @@ export class DataAccess {
         if (newPasswordHash === passwordHash){
             return user_id;
         }
-        // TODO: log error invalid password
+        // TODO: handle error
         return 0; 
     }
+
+
+
+
 
     // TODO: remove this test data
     createTestUser = async(): Promise<number> => {
@@ -230,7 +243,7 @@ export class DataAccess {
         const salt = "salt"
 
         const isActive = true;
-        const result = await this.pool.query<DbUser>(
+        const result = await this.pool.query<CreateUserResponse>(
             `insert into users(
                 is_active,
                 first_name,
@@ -262,7 +275,7 @@ export class DataAccess {
         const cty = "Minneapolis";
         const ste = "Minnesota";
 
-        const result = await this.pool.query<DbLocation>(
+        const result = await this.pool.query<CreateLocationResponse>(
             `insert into locations(
                 latitude,
                 longitude,
@@ -298,7 +311,7 @@ export class DataAccess {
         const ln = "sama";
         const eml = "nappy@gmail.com";
         const uId = userId;
-        const result = await this.pool.query<DbContact>(
+        const result = await this.pool.query<CreateContactResponse>(
             `insert into contacts(
                 first_name,
                 last_name,
